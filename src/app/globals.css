@@ -1,0 +1,70 @@
+@import "tailwindcss";
+
+:root {
+  font-size: 20px;
+  color: white;
+
+  font-variant-ligatures: none;
+
+  font-family: "Lexend";
+}
+
+@theme {
+  --color-bg: #0d0e10;
+  --color-bg-light: #16191d;
+  --color-bg-lighter: #1b222a;
+  --color-bg-lightest: #2c2f37;
+  --color-bg-light-transparent: rgba(22, 25, 29, 0.5);
+
+  --color-primary: #254fa8;
+  --color-primary-disabled: #16367a;
+  --color-secondary: #3263ce;
+  --color-tertiary: #3364ce;
+
+  --color-danger: #9f0900;
+  --color-danger-secondary: #6c0a05;
+
+  --color-success: #009f2d;
+  --color-success-secondary: #056c13;
+}
+
+select, option {
+  font: -moz-pull-down-menu;
+}
+
+@layer base {
+  h1 {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+    font-weight: 600;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 500;
+  }
+
+  h4 {
+    font-size: 1rem;
+    font-weight: 500;
+  }
+}
+
+body {
+  background: var(--color-bg);
+  color: white;
+  font-family: Lexend;
+}
+
+@layer utilities {
+  .absolute-center {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+}
