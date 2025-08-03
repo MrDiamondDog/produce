@@ -8,9 +8,11 @@ import Subtext from "@/components/Subtext";
 import { toTimerString } from "@/utils/time";
 import { Gauge, gaugeClasses } from "@mui/x-charts";
 import { ArrowLeft, Eye, EyeOff, Pause, Play, Plus, Star } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import SlidingPuzzleGame from "@/components/games/SlidingPuzzle";
+import SnakeGame from "@/components/games/Snake";
+import { toast } from "sonner";
 
 export type Options = {
     timer: number;
@@ -45,6 +47,8 @@ export default function HomePage({ params }: { params: Promise<{ options: string
 
     const [taskInput, setTaskInput] = useState("");
 
+    const started = useRef(false);
+
     function updateTimer() {
         setSecondsPassed(curr => curr + 1);
     }
@@ -61,7 +65,15 @@ export default function HomePage({ params }: { params: Promise<{ options: string
         setTaskInput("");
     }
 
+    function preventLeave(e: Event) {
+        e.preventDefault();
+    }
+
     useEffect(() => {
+        if (started.current)
+            return;
+        started.current = true;
+
         params.then(p => {
             const options = JSON.parse(atob(decodeURIComponent(p.options))) as Options;
 
@@ -71,7 +83,18 @@ export default function HomePage({ params }: { params: Promise<{ options: string
 
             makeInterval();
         });
+
+        window.addEventListener("beforeunload", preventLeave);
+        Notification.requestPermission().then(res => {
+            if (res !== "granted")
+                toast.info("Please turn on notifications to know when your timer ends.", { duration: 10 * 1000 });
+        });
     }, []);
+
+    useEffect(() => {
+        if (state === "finished")
+            window.removeEventListener("beforeunload", preventLeave);
+    }, [state]);
 
     useEffect(() => {
         if (!timerSeconds)
@@ -79,8 +102,15 @@ export default function HomePage({ params }: { params: Promise<{ options: string
         if (secondsPassed <= (state === "work" ? timerSeconds : breakSeconds))
             return;
 
+        if (state === "finished")
+            return;
+
         setSecondsPassed(0);
         setState(state === "work" ? "break" : "work");
+
+        const message = state === "break" ? "Time to get back to work!" : "Time to take a break!";
+        new Notification(message);
+        toast.info(message, { duration: 60 * 1000 });
     }, [secondsPassed]);
 
     useEffect(() => {
@@ -95,9 +125,9 @@ export default function HomePage({ params }: { params: Promise<{ options: string
         }
     }, [paused]);
 
-    return timerSeconds && <>
+    return !!timerSeconds && <>
         <div
-            className={`transition-opacity flex gap-2 items-center 
+            className={`transition-opacity flex gap-2 items-center drop-shadow-lg text-shadow-lg
                 ${gamesOpen ? "absolute top-2 left-2" : "absolute-center"} 
                 ${state === "finished" && "pointer-events-none"}`}
             style={{ opacity: state === "finished" ? "0" : "100%" }}
@@ -114,12 +144,15 @@ export default function HomePage({ params }: { params: Promise<{ options: string
                         },
                         [`& .${gaugeClasses.valueText} text`]: {
                             fill: "white",
+                            textShadow: "0px 1px 2px rgb(0 0 0 / 0.1), 0px 3px 2px rgb(0 0 0 / 0.1), 0px 4px 8px rgb(0 0 0 / 0.1)",
                         },
                         [`& .${gaugeClasses.valueArc}`]: {
-                            fill: "var(--color-primary)",
+                            fill: paused ? "var(--color-primary-disabled)" : "var(--color-primary)",
+                            transition: "fill 250ms cubic-bezier(0.4, 0, 0.2, 1)",
                         },
                         [`& .${gaugeClasses.referenceArc}`]: {
                             fill: "var(--color-bg-light)",
+                            opacity: "50%",
                         },
                     })}
                     className="drop-shadow-lg"
@@ -143,7 +176,7 @@ export default function HomePage({ params }: { params: Promise<{ options: string
                     setGamesOpen(true);
                     setGame("");
                 }}>
-                    Break Games
+                    Games
                 </Button>}
             </div>
 
@@ -155,7 +188,7 @@ export default function HomePage({ params }: { params: Promise<{ options: string
 
                     <div className="flex gap-1 w-full">
                         <Input
-                            placeholder="Add task"
+                            placeholder="Add task..."
                             className="w-full"
                             value={taskInput}
                             onChange={e => setTaskInput(e.target.value)}
@@ -186,8 +219,8 @@ export default function HomePage({ params }: { params: Promise<{ options: string
                     </div>
 
                     {Object.keys(tasks).filter(k => !tasks[k]).length === 0 && <Button
-                        className="mt-1"
-                        onClick={() => setState("finished")}
+                        className="mt-1 w-full"
+                        onClick={() => confirm("Are you ready to be finished?") && setState("finished")}
                     >
                         All Done
                     </Button>}
@@ -202,10 +235,10 @@ export default function HomePage({ params }: { params: Promise<{ options: string
                 <h2>Games</h2>
                 <Button onClick={() => setGame("puzzle")}>Sliding Puzzle</Button>
                 <Button onClick={() => setGame("snake")}>Snake</Button>
-                <Button onClick={() => setGame("pong")}>Pong</Button>
             </div>}
 
             <SlidingPuzzleGame open={game === "puzzle"} onClose={() => setGame("")} />
+            <SnakeGame open={game === "snake"} onClose={() => setGame("")} />
         </>}
 
         <div className={`${state !== "finished" && "pointer-events-none !opacity-0"} opacity-100 transition-opacity`}>
@@ -220,7 +253,7 @@ export default function HomePage({ params }: { params: Promise<{ options: string
                 recycle={false}
                 run={state === "finished"}
             />
-            <div className="absolute-center text-center flex flex-col gap-1 items-center max-w-[300px]">
+            <div className="absolute-center text-center flex flex-col gap-1 items-center max-w-[300px] drop-shadow-lg text-shadow-lg">
                 <h1>Good job!</h1>
                 <p>You got stuff done.</p>
                 <Subtext>Tip: Bookmark this page and it will keep the options you set!</Subtext>

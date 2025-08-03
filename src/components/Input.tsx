@@ -10,7 +10,7 @@ export default function Input({ multiline, label, error, ...props }:
         }
         {createElement(Component, {
             ...props,
-            className: `px-2 py-1 rounded-lg bg-bg-light border-2 border-transparent
+            className: `px-2 py-1 rounded-lg bg-bg-light/75 border-2 border-transparent
             text-white items-center outline-none focus:outline-none drop-shadow-lg
             focus:border-primary disabled:text-gray-400 text-sm transition-all ${error && "!border-danger"}`,
         })}

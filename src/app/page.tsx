@@ -47,13 +47,14 @@ export default function Home() {
             setError("");
     }, [timerLength, breakLength]);
 
-    return (<div className="absolute-center w-[375px]">
+    return (<div className="absolute-center w-[375px] *:drop-shadow-lg *:text-shadow-lg">
         <h1
-            className="text-transparent bg-clip-text inline-block bg-gradient-to-r from-primary to-success text-6xl text-center w-full"
+            className=
+                "text-transparent bg-clip-text inline-block bg-gradient-to-r from-secondary to-success text-6xl text-center w-full"
         >
             Produce
         </h1>
-        <Subtext className="text-center w-full">Make a todo list, set a timer and Produce!</Subtext>
+        <Subtext className="text-center w-full">Make a todo list, set a timer, get stuff done!</Subtext>
 
         <Divider />
 

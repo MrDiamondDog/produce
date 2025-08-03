@@ -2,14 +2,18 @@
 
 import { Check, EllipsisVertical, Pencil, Trash2, X } from "lucide-react";
 import { Dropdown, DropdownContent, DropdownItem, DropdownTrigger } from "./Dropdown";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Input from "./Input";
+import ReactConfetti from "react-confetti";
+import Portal from "./Portal";
 
 export default function TodoItem({ checked, onChange, label, disabled, onEdit, onDelete }:
     { checked?: boolean, onChange?: (checked: boolean) => void,
         label?: string, disabled?: boolean, onEdit?: (name: string) => void, onDelete?: () => void }) {
     const [editMode, setEditMode] = useState(false);
     const [editText, setEditText] = useState(label);
+
+    const checkboxRef = useRef<HTMLDivElement | null>(null);
 
     function edit() {
         if (!editText)
@@ -19,12 +23,13 @@ export default function TodoItem({ checked, onChange, label, disabled, onEdit, o
         setEditMode(false);
     }
 
-    return (
-        <div className="flex gap-1 items-center justify-between">
+    return (<div className="">
+        <div className="flex gap-1 items-center justify-between text-shadow-lg">
             <div className="flex gap-1 items-center select-none" onClick={() => (!disabled && !editMode) && onChange?.(!checked)}>
                 <div
-                    className={`min-w-5 min-h-5 rounded-sm border-2 border-bg-lighter 
-                transition-all relative ${checked && "bg-primary"} ${!disabled && "cursor-pointer"}`}
+                    className={`min-w-5 min-h-5 rounded-sm border-2 border-bg-lighter
+                transition-all relative ${checked ? "bg-primary" : "bg-bg-light/50"} ${!disabled && "cursor-pointer"}`}
+                    ref={checkboxRef}
                 >
                     {checked && <Check size={16} strokeWidth={5} className="absolute-center mt-[1px]" />}
                 </div>
@@ -53,5 +58,21 @@ export default function TodoItem({ checked, onChange, label, disabled, onEdit, o
                 }} />
             </div>}
         </div>
-    );
+
+        {(checkboxRef.current && checked) && <Portal>
+            <ReactConfetti
+                numberOfPieces={10}
+                initialVelocityX={4}
+                initialVelocityY={{ min: -5, max: -15 }}
+                confettiSource={{
+                    x: checkboxRef.current.getBoundingClientRect().left,
+                    y: checkboxRef.current.getBoundingClientRect().top,
+                    w: 0, h: 0,
+                }}
+                tweenDuration={200}
+                gravity={0.2}
+                recycle={false}
+            />
+        </Portal>}
+    </div>);
 }

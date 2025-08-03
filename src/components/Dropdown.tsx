@@ -21,7 +21,7 @@ export function DropdownContent({ children }: React.PropsWithChildren) {
     return (
         <DropdownMenuPortal>
             <DropdownMenuContent
-                className={`p-2 bg-bg-lighter rounded-lg text-sm flex flex-col min-w-[150px] 
+                className={`p-2 bg-bg-lighter/95 rounded-lg text-sm flex flex-col min-w-[150px] 
                     fade-in z-50 drop-shadow-lg max-h-[400px] overflow-scroll`}
             >
                 {children}
