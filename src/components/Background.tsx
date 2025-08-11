@@ -57,9 +57,9 @@ function init(canvas: HTMLCanvasElement) {
 attribute vec2 position;
 
 void main() {
-// position specifies only x and y.
-// We set z to be 0.0, and w to be 1.0
-gl_Position = vec4(position, 0.0, 1.0);
+    // position specifies only x and y.
+    // We set z to be 0.0, and w to be 1.0
+    gl_Position = vec4(position, 0.0, 1.0);
 }`;
 
     const fragmentShaderSrc = `
@@ -71,25 +71,25 @@ const float HEIGHT = ${height >> 0}.0;
 uniform vec3 metaballs[${numMetaballs}];
 
 void main(){
-float x = gl_FragCoord.x;
-float y = gl_FragCoord.y;
+    float x = gl_FragCoord.x;
+    float y = gl_FragCoord.y;
 
-float sum = 0.0;
-for (int i = 0; i < ${numMetaballs}; i++) {
-vec3 metaball = metaballs[i];
-float dx = metaball.x - x;
-float dy = metaball.y - y;
-float radius = metaball.z;
+    float sum = 0.0;
+    for (int i = 0; i < ${numMetaballs}; i++) {
+        vec3 metaball = metaballs[i];
+        float dx = metaball.x - x;
+        float dy = metaball.y - y;
+        float radius = metaball.z;
 
-sum += (radius * radius) / (dx * dx + dy * dy);
-}
+        sum += (radius * radius) / (dx * dx + dy * dy);
+    }
 
-if (sum >= 0.99) {
-gl_FragColor = vec4(mix(vec3(x / WIDTH, y / HEIGHT, 1.0), vec3(0, 0, 0), max(0.0, 1.0 - (sum - 0.99) * 100.0)), 1.0);
-return;
-}
+    if (sum >= 0.99) {
+        gl_FragColor = vec4(mix(vec3(x / WIDTH, y / HEIGHT, 1.0), vec3(0, 0, 0), max(0.0, 1.0 - (sum - 0.99) * 100.0)), 1.0);
+        return;
+    }
 
-gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 }`;
 
     let vertexShader = compileShader(gl, vertexShaderSrc, gl.VERTEX_SHADER);
@@ -124,7 +124,12 @@ gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
 
     let metaballsHandle = getUniformLocation(gl, program, "metaballs");
 
+    let running = true;
+
     function draw() {
+        if (!running)
+            return;
+
         for (let i = 0; i < numMetaballs; i++) {
             let metaball = metaballs[i];
             metaball.x += metaball.vx;
@@ -146,11 +151,31 @@ gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
         }
         gl.uniform3fv(metaballsHandle, dataToSendToGPU);
 
-        // Draw
         gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
 
         requestAnimationFrame(draw);
     }
+
+    function resize() {
+        gl.canvas.width = window.innerWidth;
+        gl.canvas.height = window.innerHeight;
+        width = window.innerWidth;
+        height = window.innerHeight;
+
+        running = false;
+        gl.deleteShader(vertexShader);
+        gl.deleteShader(fragmentShader);
+        gl.deleteBuffer(vertexDataBuffer);
+        gl.deleteProgram(program);
+
+        init(gl.canvas as HTMLCanvasElement);
+    }
+
+    let debounceTimer: NodeJS.Timeout | null = null;
+    window.addEventListener("resize", () => {
+        debounceTimer && clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(resize, 150);
+    });
 
     draw();
 }
@@ -163,21 +188,14 @@ export default function Background() {
         if (!canvasRef.current || hasInit.current)
             return;
 
-        function resize() {
-            canvasRef.current!.width = window.innerWidth;
-            canvasRef.current!.height = window.innerHeight;
-            width = window.innerWidth;
-            height = window.innerHeight;
-        }
-
-        window.addEventListener("resize", resize);
-        resize();
+        canvasRef.current.width = window.innerWidth;
+        canvasRef.current.height = window.innerHeight;
+        width = window.innerWidth;
+        height = window.innerHeight;
 
         hasInit.current = true;
 
         init(canvasRef.current);
-
-        return () => window.removeEventListener("resize", resize);
     }, [canvasRef.current]);
 
     return (
