@@ -7,12 +7,13 @@ import Input from "@/components/Input";
 import Subtext from "@/components/Subtext";
 import { toTimerString } from "@/utils/time";
 import { Gauge, gaugeClasses } from "@mui/x-charts";
-import { ArrowLeft, Eye, EyeOff, Pause, Play, Plus, Star } from "lucide-react";
+import { ArrowLeft, Bookmark, Eye, EyeOff, Fullscreen, Pause, Play, Plus, SkipForward, Star } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import Confetti from "react-confetti";
 import SlidingPuzzleGame from "@/components/games/SlidingPuzzle";
 import SnakeGame from "@/components/games/Snake";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export type Options = {
     timer: number;
@@ -29,6 +30,8 @@ function GaugeCenter({ children }: React.PropsWithChildren) {
 }
 
 export default function HomePage({ params }: { params: Promise<{ options: string }> }) {
+    const router = useRouter();
+
     const [tasks, setTasks] = useState<Record<string, boolean>>({});
 
     const [timerSeconds, setTimerSeconds] = useState(0);
@@ -58,7 +61,7 @@ export default function HomePage({ params }: { params: Promise<{ options: string
             setUpdateInterval(setInterval(updateTimer, 1000));
     }
 
-    function addTask() {
+    async function addTask() {
         if (!taskInput)
             return;
         setTasks({ ...tasks, [taskInput]: false });
@@ -127,105 +130,134 @@ export default function HomePage({ params }: { params: Promise<{ options: string
 
     return !!timerSeconds && <>
         <div
-            className={`transition-opacity flex gap-2 items-center drop-shadow-lg text-shadow-lg
+            className={`transition-opacity drop-shadow-lg text-shadow-lg
                 ${gamesOpen ? "absolute top-2 left-2" : "absolute-center"} 
                 ${state === "finished" && "pointer-events-none"}`}
             style={{ opacity: state === "finished" ? "0" : "100%" }}
         >
-            <div>
-                <Gauge
-                    width={200}
-                    height={200}
-                    value={((state === "work" ? timerSeconds : breakSeconds) - secondsPassed) /
-                (state === "work" ? timerSeconds : breakSeconds) * 100}
-                    sx={() => ({
-                        [`& .${gaugeClasses.valueText}`]: {
-                            display: "none",
-                        },
-                        [`& .${gaugeClasses.valueText} text`]: {
-                            fill: "white",
-                            textShadow: "0px 1px 2px rgb(0 0 0 / 0.1), 0px 3px 2px rgb(0 0 0 / 0.1), 0px 4px 8px rgb(0 0 0 / 0.1)",
-                        },
-                        [`& .${gaugeClasses.valueArc}`]: {
-                            fill: paused ? "var(--color-primary-disabled)" : "var(--color-primary)",
-                            transition: "fill 250ms cubic-bezier(0.4, 0, 0.2, 1)",
-                        },
-                        [`& .${gaugeClasses.referenceArc}`]: {
-                            fill: "var(--color-bg-light)",
-                            opacity: "50%",
-                        },
-                    })}
-                    className="drop-shadow-lg"
-                >
-                    <GaugeCenter>
-                        <Subtext>{state}</Subtext>
-                        {timerVisible && <h3>{toTimerString((state === "work" ? timerSeconds : breakSeconds) - secondsPassed)}</h3>}
-                        {!timerVisible && <h3>--</h3>}
 
-                        <div className="flex gap-1">
-                            {!paused && <Pause className="cursor-pointer" onClick={() => setPaused(true)} />}
-                            {paused && <Play className="cursor-pointer" onClick={() => setPaused(false)} />}
-
-                            {timerVisible && <Eye className="cursor-pointer" onClick={() => setTimerVisible(false)} />}
-                            {!timerVisible && <EyeOff className="cursor-pointer" onClick={() => setTimerVisible(true)} />}
-                        </div>
-                    </GaugeCenter>
-                </Gauge>
-
-                {(state === "break" && !gamesOpen) && <Button className="w-full" onClick={() => {
-                    setGamesOpen(true);
-                    setGame("");
-                }}>
-                    Games
-                </Button>}
-            </div>
-
-            {!gamesOpen && <>
-                <Divider vertical />
-
+            <div className="flex gap-2 items-center">
                 <div>
-                    <h2>Todo</h2>
-
-                    <div className="flex gap-1 w-full">
-                        <Input
-                            placeholder="Add task..."
-                            className="w-full"
-                            value={taskInput}
-                            onChange={e => setTaskInput(e.target.value)}
-                            onKeyDown={e => {
-                                if (e.key === "Enter")
-                                    addTask();
-                            }}
-                        />
-                        <Button onClick={addTask}><Plus /></Button>
-                    </div>
-
-                    <div className="flex flex-col gap-1 max-h-[400px] overflow-y-scroll overflow-x-hidden">
-                        {Object.keys(tasks).map((t, i) => <TodoItem
-                            label={t}
-                            key={i}
-                            checked={tasks[t]}
-                            onChange={c => setTasks({ ...tasks, [t]: c })}
-                            onEdit={label => {
-                                const v = tasks[t];
-                                delete tasks[t];
-                                setTasks({ ...tasks, [label]: v });
-                            }}
-                            onDelete={() => {
-                                delete tasks[t];
-                                setTasks({ ...tasks });
-                            }}
-                        />)}
-                    </div>
-
-                    {Object.keys(tasks).filter(k => !tasks[k]).length === 0 && <Button
-                        className="mt-1 w-full"
-                        onClick={() => confirm("Are you ready to be finished?") && setState("finished")}
+                    <Gauge
+                        width={200}
+                        height={200}
+                        value={((state === "work" ? timerSeconds : breakSeconds) - secondsPassed) /
+                (state === "work" ? timerSeconds : breakSeconds) * 100}
+                        sx={() => ({
+                            [`& .${gaugeClasses.valueText}`]: {
+                                display: "none",
+                            },
+                            [`& .${gaugeClasses.valueText} text`]: {
+                                fill: "white",
+                                textShadow: "0px 1px 2px rgb(0 0 0 / 0.1), 0px 3px 2px rgb(0 0 0 / 0.1), 0px 4px 8px rgb(0 0 0 / 0.1)",
+                            },
+                            [`& .${gaugeClasses.valueArc}`]: {
+                                fill: paused ? "var(--color-primary-disabled)" : "var(--color-primary)",
+                                transition: "fill 250ms cubic-bezier(0.4, 0, 0.2, 1)",
+                            },
+                            [`& .${gaugeClasses.referenceArc}`]: {
+                                fill: "var(--color-bg-light)",
+                                opacity: "50%",
+                            },
+                        })}
+                        className="drop-shadow-lg"
                     >
-                        All Done
+                        <GaugeCenter>
+                            <Subtext>{state}</Subtext>
+                            {timerVisible && <h3>
+                                {toTimerString((state === "work" ? timerSeconds : breakSeconds) - secondsPassed)}
+                            </h3>}
+                            {!timerVisible && <h3>—</h3>}
+
+                            <div className="flex gap-1">
+                                {!paused && <Pause className="cursor-pointer" onClick={() => setPaused(true)} />}
+                                {paused && <Play className="cursor-pointer" onClick={() => setPaused(false)} />}
+
+                                {timerVisible && <Eye className="cursor-pointer" onClick={() => setTimerVisible(false)} />}
+                                {!timerVisible && <EyeOff className="cursor-pointer" onClick={() => setTimerVisible(true)} />}
+
+                                <SkipForward
+                                    className="cursor-pointer"
+                                    onClick={() => {
+                                        setState(state === "work" ? "break" : "work");
+                                        setSecondsPassed(0);
+                                    }}
+                                />
+                            </div>
+                        </GaugeCenter>
+                    </Gauge>
+
+                    {(state === "break" && !gamesOpen) && <Button className="w-full" onClick={() => {
+                        setGamesOpen(true);
+                        setGame("");
+                    }}>
+                        Games
                     </Button>}
                 </div>
-            </>}
+
+                {!gamesOpen && <>
+                    <Divider vertical />
+
+                    <div>
+                        <h2>Todo</h2>
+
+                        <div className="flex gap-1 w-full">
+                            <Input
+                                placeholder="Add task..."
+                                className="w-full"
+                                value={taskInput}
+                                onChange={e => setTaskInput(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === "Enter")
+                                        addTask();
+                                }}
+                            />
+                            <Button onClick={addTask}><Plus /></Button>
+                        </div>
+
+                        <div className="flex flex-col gap-1 max-h-[400px] overflow-y-scroll overflow-x-hidden">
+                            {Object.keys(tasks).map((t, i) => <TodoItem
+                                label={t}
+                                key={i}
+                                checked={tasks[t]}
+                                onChange={c => setTasks({ ...tasks, [t]: c })}
+                                onEdit={label => {
+                                    const v = tasks[t];
+                                    delete tasks[t];
+                                    setTasks({ ...tasks, [label]: v });
+                                }}
+                                onDelete={() => {
+                                    delete tasks[t];
+                                    setTasks({ ...tasks });
+                                }}
+                            />)}
+                        </div>
+                    </div>
+                </>}
+            </div>
+
+            <Divider />
+
+            <div className="flex justify-between items-center">
+                <div className="w-full flex gap-1">
+                    {document.fullscreenEnabled && <Button
+                        onClick={() => (document.fullscreenElement ? document.exitFullscreen() : document.body.requestFullscreen())}
+                    >
+                        <Fullscreen />
+                    </Button>}
+                    <Button
+                        onClick={() => toast.info("Press CRTL/⌘ + D to bookmark this page with your configuration!")}
+                    >
+                        <Bookmark />
+                    </Button>
+                </div>
+                {Object.keys(tasks).filter(k => !tasks[k]).length === 0 && <Button
+                    className="w-full"
+                    onClick={() => confirm("Are you ready to be finished?") && setState("finished")}
+                >
+                        All Done
+                </Button>}
+            </div>
         </div>
 
         {gamesOpen && <>
